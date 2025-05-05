@@ -1,5 +1,5 @@
 variable "prefix" {
-  description = "Resource prefix"
+  description = "Name prefix for every Azure resource"
   type        = string
   default     = "hydro"
 }
@@ -7,20 +7,20 @@ variable "prefix" {
 variable "location" {
   description = "Azure region"
   type        = string
-  default     = "eastus"
+  default     = "westeurope"
 }
 
 variable "kubernetes_version" {
-  description = "Kubernetes version"
+  description = "AKS version"
   type        = string
-  default     = "1.28.3"
+  default     = "1.29"
 }
 
 variable "tags" {
-  description = "Resource tags"
+  description = "Common tag map"
   type        = map(string)
-  default     = {
-    environment = "dev"
-    project     = "hydrosat"
+  default = {
+    Environment = "Challenge"
+    Owner       = "ashok"
   }
 } 
