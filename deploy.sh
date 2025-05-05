@@ -21,9 +21,10 @@ echo "⏳ 2/4 Get AKS creds ..."
 az aks get-credentials -g "$RG" -n "$AKS_NAME" --overwrite-existing
 
 echo "⏳ 3/4 Build & push image ..."
-az acr login -n "$ACR_NAME"
-docker build -t "$ACR_NAME.azurecr.io/hydrosat:latest" ./dagster
-docker push "$ACR_NAME.azurecr.io/hydrosat:latest"
+az acr build \
+   --registry "$ACR_NAME" \
+   --image hydrosat:latest \
+   ./dagster
 
 echo "⏳ 4/4 Helm install Dagster ..."
 helm repo add dagster https://dagster-io.github.io/helm
@@ -31,6 +32,7 @@ helm repo update
 helm upgrade --install dagster dagster/dagster \
    --namespace dagster --create-namespace \
    -f helm/dagster-values.yaml \
-   --set userCodeDeployments[0].image.repository="$ACR_NAME.azurecr.io/hydrosat"
+   --set userCodeDeployments[0].image.repository="$ACR_NAME.azurecr.io/hydrosat" \
+   --set userCodeDeployments[0].image.tag="latest"
 
 echo "✅ Done. Run  ➜  kubectl -n dagster get svc dagster-dagster-webserver"
