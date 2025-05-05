@@ -2,7 +2,7 @@
 # 1 ─ Resource Group
 ############################
 resource "azurerm_resource_group" "rg" {
-  name     = "${var.prefix}-rg"
+  name     = "hydro-rg"
   location = var.location
   tags     = local.common_tags
 }
@@ -50,7 +50,7 @@ resource "azurerm_storage_account" "sa" {
   location                  = var.location
   account_tier              = "Standard"
   account_replication_type  = "ZRS"
-  https_traffic_only_enabled = true  # Updated from enable_https_traffic_only
+  https_traffic_only_enabled = true
   min_tls_version           = "TLS1_2"
   network_rules {
     default_action             = "Deny"
@@ -119,6 +119,7 @@ module "aks" {
 
   # identity
   rbac_aad_managed         = true
+  role_based_access_control_enabled = true
 
   node_pools = {
     system = {
@@ -130,7 +131,8 @@ module "aks" {
       max_count           = 3
     }
   }
-
+  
+  depends_on = [azurerm_resource_group.rg]
   tags = local.common_tags
 }
 
