@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.8.0"
+  required_version = ">= 1.0.0"
 
   required_providers {
     azurerm = {
@@ -22,9 +22,5 @@ provider "azurerm" {
 }
 
 provider "azapi" {
-  alias = "v1"
-}
 
-locals {
-  aks_api_version = "2024-10-01"  
-} 
+}

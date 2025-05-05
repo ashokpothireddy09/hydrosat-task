@@ -66,12 +66,14 @@ resource "azurerm_storage_container" "inputs" {
   name                  = "inputs"
   storage_account_name  = azurerm_storage_account.sa.name
   container_access_type = "private"
+  depends_on            = [azurerm_storage_account.sa]
 }
 
 resource "azurerm_storage_container" "outputs" {
   name                  = "outputs"
   storage_account_name  = azurerm_storage_account.sa.name
   container_access_type = "private"
+  depends_on            = [azurerm_storage_account.sa]
 }
 
 resource "azurerm_private_endpoint" "sa_pe" {
@@ -132,14 +134,6 @@ module "aks" {
   # tier
   sku_tier                 = "Standard"
 
-  providers = {
-    azapi = azapi.v1
-  }
-  
-  azapi_custom_api_versions = {
-    managedClusters = local.aks_api_version
-  }
-
   node_pools = {
     system = {
       name                = "system"
@@ -162,10 +156,12 @@ resource "azurerm_role_assignment" "acr_pull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
   principal_id         = module.aks.kubelet_identity[0].object_id
+  depends_on           = [module.aks]
 }
 
 resource "azurerm_role_assignment" "aks_sa_blob" {
   scope                = azurerm_storage_account.sa.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = module.aks.kubelet_identity[0].object_id
+  depends_on           = [module.aks, azurerm_storage_account.sa]
 }
