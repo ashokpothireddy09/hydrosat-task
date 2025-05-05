@@ -12,7 +12,7 @@ resource "azurerm_resource_group" "rg" {
 ############################
 module "vnet" {
   source  = "Azure/vnet/azurerm"
-  version = "5.0.1"
+  version = "4.0.0"
 
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
@@ -26,7 +26,6 @@ module "vnet" {
   }
   subnet_names              = keys(subnet_prefixes)
   subnet_service_endpoints  = { for k in subnet_prefixes : k => ["Microsoft.Storage"] }
-  tags                      = var.tags
 }
 
 ############################
