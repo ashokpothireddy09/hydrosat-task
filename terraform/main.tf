@@ -52,8 +52,10 @@ resource "azurerm_storage_account" "sa" {
   account_replication_type  = "ZRS"
   https_traffic_only_enabled = true
   min_tls_version           = "TLS1_2"
+  allow_nested_items_to_be_public = true
+  
   network_rules {
-    default_action             = "Deny"
+    default_action             = "Allow"  # Changed from Deny to Allow for initial deployment
     bypass                     = ["AzureServices"]
     virtual_network_subnet_ids = [module.vnet.vnet_subnets_name_id["aks_system"]]
   }
@@ -109,17 +111,34 @@ module "aks" {
   prefix                   = var.prefix
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = var.location
-  kubernetes_version       = var.kubernetes_version
+  kubernetes_version       = "1.30.3"  # Using a newer version available in GA
 
   # networking
   private_cluster_enabled  = true
   vnet_subnet_id           = module.vnet.vnet_subnets_name_id["aks_system"]
   network_plugin           = "azure"
   network_policy           = "calico"
+  network_plugin_mode      = "overlay"  # Enable overlay mode
+  
+  # Use the correct parameter names for network configuration
+  net_profile_pod_cidr     = "192.168.0.0/16"  # Correct parameter for pod CIDR
+  net_profile_service_cidr = "172.17.0.0/16"   # Service CIDR
+  net_profile_dns_service_ip = "172.17.0.10"   # DNS service IP
 
   # identity
   rbac_aad_managed         = true
   role_based_access_control_enabled = true
+  
+  # tier
+  sku_tier                 = "Standard"
+
+  providers = {
+    azapi = azapi.v1
+  }
+  
+  azapi_custom_api_versions = {
+    managedClusters = local.aks_api_version
+  }
 
   node_pools = {
     system = {

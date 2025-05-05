@@ -10,9 +10,21 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    azapi = {
+      source  = "azure/azapi"
+      version = ">=1.4.0, <2.0.0"
+    }
   }
 }
 
 provider "azurerm" {
   features {}
+}
+
+provider "azapi" {
+  alias = "v1"
+}
+
+locals {
+  aks_api_version = "2024-10-01"  
 } 
