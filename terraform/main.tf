@@ -14,10 +14,11 @@ module "vnet" {
   source  = "Azure/vnet/azurerm"
   version = "4.0.0"
 
+  use_for_each        = true
   resource_group_name = azurerm_resource_group.rg.name
-  vnet_location      = var.location
-  vnet_name          = "${var.prefix}-vnet"
-  address_space      = ["10.0.0.0/16"]
+  vnet_name           = "${var.prefix}-vnet"
+  vnet_location       = var.location
+  address_space       = ["10.0.0.0/16"]
 
   subnet_prefixes = [
     "10.0.0.0/22",  # aks_system
@@ -44,30 +45,30 @@ module "vnet" {
 resource "random_id" "rand" { byte_length = 3 }
 
 resource "azurerm_storage_account" "sa" {
-  name                     = lower("${var.prefix}${random_id.rand.hex}sa")
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "ZRS"
-  enable_https_traffic_only = true
-  min_tls_version          = "TLS1_2"
+  name                      = lower("${var.prefix}${random_id.rand.hex}sa")
+  resource_group_name       = azurerm_resource_group.rg.name
+  location                  = var.location
+  account_tier              = "Standard"
+  account_replication_type  = "ZRS"
+  https_traffic_only_enabled = true  # Updated from enable_https_traffic_only
+  min_tls_version           = "TLS1_2"
   network_rules {
     default_action             = "Deny"
     bypass                     = ["AzureServices"]
-    virtual_network_subnet_ids = [module.vnet.subnets["aks_system"].id]
+    virtual_network_subnet_ids = [module.vnet.vnet_subnets_name_id["aks_system"]]
   }
   tags = local.common_tags
 }
 
 resource "azurerm_storage_container" "inputs" {
-  name                 = "inputs"
-  storage_account_name = azurerm_storage_account.sa.name
+  name                  = "inputs"
+  storage_account_name  = azurerm_storage_account.sa.name
   container_access_type = "private"
 }
 
 resource "azurerm_storage_container" "outputs" {
-  name                 = "outputs"
-  storage_account_name = azurerm_storage_account.sa.name
+  name                  = "outputs"
+  storage_account_name  = azurerm_storage_account.sa.name
   container_access_type = "private"
 }
 
@@ -75,12 +76,13 @@ resource "azurerm_private_endpoint" "sa_pe" {
   name                = "${var.prefix}-sa-pe"
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
-  subnet_id           = module.vnet.subnets["private_endpoints"].id
+  subnet_id           = module.vnet.vnet_subnets_name_id["private_endpoints"]
 
   private_service_connection {
     name                           = "${var.prefix}-sa-conn"
     private_connection_resource_id = azurerm_storage_account.sa.id
     subresource_names              = ["blob"]
+    is_manual_connection           = false
   }
   tags = local.common_tags
 }
@@ -111,15 +113,15 @@ module "aks" {
 
   # networking
   private_cluster_enabled  = true
-  vnet_subnet_id           = module.vnet.subnets["aks_system"].id
+  vnet_subnet_id           = module.vnet.vnet_subnets_name_id["aks_system"]
   network_plugin           = "azure"
   network_policy           = "calico"
 
   # identity
   rbac_aad_managed         = true
 
-  node_pools = [
-    {
+  node_pools = {
+    system = {
       name                = "system"
       vm_size             = "Standard_D4ads_v5"
       node_count          = 1
@@ -127,7 +129,7 @@ module "aks" {
       min_count           = 1
       max_count           = 3
     }
-  ]
+  }
 
   tags = local.common_tags
 }
@@ -138,11 +140,11 @@ module "aks" {
 resource "azurerm_role_assignment" "acr_pull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
-  principal_id         = module.aks.kubelet_identity_oid
+  principal_id         = module.aks.kubelet_identity[0].object_id
 }
 
 resource "azurerm_role_assignment" "aks_sa_blob" {
   scope                = azurerm_storage_account.sa.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = module.aks.user_assigned_identity_id
-} 
+  principal_id         = module.aks.kubelet_identity[0].object_id
+}
