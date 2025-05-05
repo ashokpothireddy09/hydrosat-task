@@ -1,0 +1,29 @@
+dagster-user-deployments:
+  enabled: true
+  userDeployments:
+    - name: hydrosat
+      image:
+        repository: "<<<will be set by deploy.sh>>>"
+        tag: "latest"
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "-m"
+        - "hydrosat_project"
+      annotations:
+        azure.workload.identity/use: "true"        # pick up AKS Workload ID
+      env:
+        - name: AZURE_STORAGE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: az-storage
+              key: account
+dagster:
+  runLauncher:
+    type: K8sRunLauncher
+  postgresql:
+    enabled: true
+    persistence:
+      size: 8Gi
+dagster-webserver:
+  service:
+    type: LoadBalancer 

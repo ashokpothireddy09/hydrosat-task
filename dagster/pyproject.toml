@@ -1,0 +1,12 @@
+[project]
+name = "hydrosat_project"
+version = "0.1.0"
+dependencies = [
+  "dagster>=1.7.0",
+  "dagster-k8s",
+  "dagster-azure",
+  "azure-identity",
+  "geopandas",
+  "shapely",
+  "pyarrow"
+] 
