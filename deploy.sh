@@ -9,7 +9,9 @@ echo "⏳ 1/4 Terraform apply ..."
 cd terraform
 terraform init -upgrade
 terraform apply -auto-approve \
-   -var="prefix=$PREFIX" -var="location=$LOC" -var="tags={Owner=you,Environment=Challenge}"
+   -var="prefix=$PREFIX" \
+   -var="location=$LOC" \
+   -var='tags={"Environment"="Challenge","Owner"="you"}'
 AKS_NAME=$(terraform output -raw aks_name)
 ACR_NAME=$(terraform output -raw acr_name)
 STORAGE=$(terraform output -raw storage_account_name)
@@ -31,4 +33,4 @@ helm upgrade --install dagster dagster/dagster \
    -f helm/dagster-values.yaml \
    --set userCodeDeployments[0].image.repository="$ACR_NAME.azurecr.io/hydrosat"
 
-echo "✅ Done. Run  ➜  kubectl -n dagster get svc dagster-dagster-webserver" 
+echo "✅ Done. Run  ➜  kubectl -n dagster get svc dagster-dagster-webserver"

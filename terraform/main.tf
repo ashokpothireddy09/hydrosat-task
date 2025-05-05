@@ -4,7 +4,7 @@
 resource "azurerm_resource_group" "rg" {
   name     = "${var.prefix}-rg"
   location = var.location
-  tags     = var.tags
+  tags     = local.common_tags
 }
 
 ############################
@@ -15,17 +15,27 @@ module "vnet" {
   version = "4.0.0"
 
   resource_group_name = azurerm_resource_group.rg.name
-  location            = var.location
-  vnet_name           = "${var.prefix}-vnet"
-  address_space       = ["10.0.0.0/16"]
+  vnet_location      = var.location
+  vnet_name          = "${var.prefix}-vnet"
+  address_space      = ["10.0.0.0/16"]
 
-  subnet_prefixes = {
-    aks_system        = "10.0.0.0/22"
-    aks_user          = "10.0.4.0/22"
-    private_endpoints = "10.0.8.0/24"
+  subnet_prefixes = [
+    "10.0.0.0/22",  # aks_system
+    "10.0.4.0/22",  # aks_user
+    "10.0.8.0/24"   # private_endpoints
+  ]
+
+  subnet_names = [
+    "aks_system",
+    "aks_user",
+    "private_endpoints"
+  ]
+
+  subnet_service_endpoints = {
+    aks_system        = ["Microsoft.Storage"]
+    aks_user          = ["Microsoft.Storage"]
+    private_endpoints = []
   }
-  subnet_names              = keys(subnet_prefixes)
-  subnet_service_endpoints  = { for k in subnet_prefixes : k => ["Microsoft.Storage"] }
 }
 
 ############################
@@ -46,7 +56,7 @@ resource "azurerm_storage_account" "sa" {
     bypass                     = ["AzureServices"]
     virtual_network_subnet_ids = [module.vnet.subnets["aks_system"].id]
   }
-  tags = var.tags
+  tags = local.common_tags
 }
 
 resource "azurerm_storage_container" "inputs" {
@@ -72,8 +82,7 @@ resource "azurerm_private_endpoint" "sa_pe" {
     private_connection_resource_id = azurerm_storage_account.sa.id
     subresource_names              = ["blob"]
   }
-
-  tags = var.tags
+  tags = local.common_tags
 }
 
 ############################
@@ -85,7 +94,7 @@ resource "azurerm_container_registry" "acr" {
   location            = var.location
   sku                 = "Premium"
   admin_enabled       = false
-  tags                = var.tags
+  tags                = local.common_tags
 }
 
 ############################
@@ -107,20 +116,20 @@ module "aks" {
   network_policy           = "calico"
 
   # identity
-  enable_workload_identity = true
   rbac_aad_managed         = true
 
-  node_pools = {
-    system = {
+  node_pools = [
+    {
+      name                = "system"
       vm_size             = "Standard_D4ads_v5"
       node_count          = 1
       enable_auto_scaling = true
       min_count           = 1
       max_count           = 3
     }
-  }
+  ]
 
-  tags = var.tags
+  tags = local.common_tags
 }
 
 ############################

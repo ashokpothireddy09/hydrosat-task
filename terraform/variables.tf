@@ -19,8 +19,15 @@ variable "kubernetes_version" {
 variable "tags" {
   description = "Common tag map"
   type        = map(string)
-  default = {
-    Environment = "Challenge"
-    Owner       = "ashok"
-  }
+  default     = {}
+}
+
+locals {
+  common_tags = merge(
+    {
+      Environment = "Challenge"
+      Owner       = "ashok"
+    },
+    var.tags
+  )
 } 
