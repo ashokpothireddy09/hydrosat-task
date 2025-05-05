@@ -7,7 +7,7 @@ resource "azurerm_resource_group" "rg" {
 # ----------------------- NETWORK -----------------------
 module "vnet" {
   source  = "Azure/vnet/azurerm"
-  version = "4.2.0"
+  version = "5.0.1"
 
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
@@ -47,8 +47,15 @@ resource "azurerm_storage_account" "sa" {
   tags = var.tags
 }
 
-resource "azurerm_storage_container" "inputs"  { name = "inputs";  storage_account_name = azurerm_storage_account.sa.name  }
-resource "azurerm_storage_container" "outputs" { name = "outputs"; storage_account_name = azurerm_storage_account.sa.name  }
+resource "azurerm_storage_container" "inputs" {
+  name                 = "inputs"
+  storage_account_name = azurerm_storage_account.sa.name
+}
+
+resource "azurerm_storage_container" "outputs" {
+  name                 = "outputs"
+  storage_account_name = azurerm_storage_account.sa.name
+}
 
 resource "azurerm_private_endpoint" "sa_pe" {
   name                = "${var.prefix}-sa-pe"

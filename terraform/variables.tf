@@ -1,8 +1,26 @@
-variable "prefix"               { description = "Resource prefix";  type = string; default = "hydro" }
-variable "location"             { description = "Azure region";     type = string; default = "westeurope" }
-variable "kubernetes_version"   { description = "AKS version";      type = string; default = "1.29" }
+variable "prefix" {
+  description = "Resource prefix"
+  type        = string
+  default     = "hydro"
+}
+
+variable "location" {
+  description = "Azure region"
+  type        = string
+  default     = "eastus"
+}
+
+variable "kubernetes_version" {
+  description = "Kubernetes version"
+  type        = string
+  default     = "1.28.3"
+}
+
 variable "tags" {
+  description = "Resource tags"
   type        = map(string)
-  description = "Common tags"
-  default     = { Environment = "Challenge", Owner = "<<<EDIT YOUR NAME>>>" }
+  default     = {
+    environment = "dev"
+    project     = "hydrosat"
+  }
 } 
