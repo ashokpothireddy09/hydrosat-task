@@ -17,8 +17,6 @@ The system demonstrates key concepts of modern cloud-native data engineering: In
 
 ## 🏗️ Architecture
 
-![Architecture Diagram](https://i.imgur.com/example.png)
-
 The pipeline leverages Azure's managed Kubernetes service alongside Dagster orchestration to provide a scalable, maintainable platform for geospatial analytics. See the [ARCHITECTURE.md](ARCHITECTURE.md) document for detailed technical information.
 
 ## 📁 Project Structure

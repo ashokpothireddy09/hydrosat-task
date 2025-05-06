@@ -2,9 +2,6 @@
 
 This document details the architecture of the Hydrosat geospatial data processing pipeline.
 
-## 📊 Architecture Diagram
-
-![Hydrosat Pipeline Architecture](https://i.imgur.com/example.png)
 
 ## 🌐 Infrastructure Components
 
