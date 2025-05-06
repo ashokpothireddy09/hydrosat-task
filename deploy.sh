@@ -11,6 +11,13 @@ echo "⏳ 1/4 Terraform apply ..."
 cd terraform
 
 
+terraform init -upgrade
+terraform apply -auto-approve \
+   -var="prefix=$PREFIX" \
+   -var="location=$LOC" \
+   -var='tags={"Environment"="Challenge","Owner"="you"}'
+
+
 # ── read TF outputs ───────────────────────────────────────────────────────────
 AKS_NAME=$(terraform output -raw aks_name)
 ACR_NAME=$(terraform output -raw acr_name)
@@ -76,9 +83,3 @@ echo "↪  UI:  kubectl -n dagster port-forward svc/dagster-dagster-webserver 80
 echo "↪  then open http://localhost:8080"
 
 
-
-terraform init -upgrade
-terraform apply -auto-approve \
-   -var="prefix=$PREFIX" \
-   -var="location=$LOC" \
-   -var='tags={"Environment"="Challenge","Owner"="you"}'
