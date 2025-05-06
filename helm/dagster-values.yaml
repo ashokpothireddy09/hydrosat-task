@@ -36,5 +36,5 @@ dagster-user-deployments:
       port: 4000
       env:
         - name: AZURE_STORAGE_CONNECTION_STRING
-          value: "DefaultEndpointsProtocol=https;AccountName=hydrosatstorage;AccountKey=YOUR_ACCOUNT_KEY;EndpointSuffix=core.windows.net"
+          value: "DefaultEndpointsProtocol=https;AccountName=hydro0ba375sa;AccountKey=F+SWu6Kw8FJpm+ysWGYFL7E/SFvphzs/3S2jLk1nX4/nyIsCNK7jyaL9ZFyYVgf/8R9q9V87ZR9J+AStF70vqw==;EndpointSuffix=core.windows.net"
       workingDirectory: "/app"

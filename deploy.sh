@@ -8,14 +8,18 @@ PREFIX=${3:-hydro}
 echo "⏳ 1/4 Terraform apply ..."
 cd terraform
 
+# First run terraform commands before trying to get outputs
+
+
+# Now get outputs after terraform has run
 AKS_NAME=$(terraform output -raw aks_name)
 ACR_NAME=$(terraform output -raw acr_name)
 STORAGE=$(terraform output -raw storage_account_name)
 
 echo "⏳ Getting Azure Storage account key..."
 # Get resource group and storage account name from terraform
-RESOURCE_GROUP=$(terraform -chdir=terraform output -raw resource_group_name)
-STORAGE_ACCOUNT=$(terraform -chdir=terraform output -raw storage_account_name)
+RESOURCE_GROUP=$(terraform output -raw resource_group_name)
+STORAGE_ACCOUNT=$(terraform output -raw storage_account_name)
 
 # Get the primary storage account key
 STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query "[0].value" -o tsv)
@@ -25,7 +29,10 @@ CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=$STORAGE_ACCOUNT;A
 
 # Update the Helm values file with the actual connection string
 # This uses sed to replace the placeholder with the actual connection string
-sed -i "s|AZURE_STORAGE_CONNECTION_STRING.*|AZURE_STORAGE_CONNECTION_STRING\n            value: \"$CONNECTION_STRING\"|" helm/dagster-values.yaml
+# Update the Helm values file with the actual connection string
+# This uses sed to replace the placeholder value line for AZURE_STORAGE_CONNECTION_STRING
+sed -i "/name: AZURE_STORAGE_CONNECTION_STRING/{N;s|value: \".*\"|value: \"$CONNECTION_STRING\"|;}" ../helm/dagster-values.yaml
+
 
 cd ..
 
