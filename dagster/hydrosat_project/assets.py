@@ -1,4 +1,3 @@
-# hydrosat_project/assets.py
 import datetime
 import pandas as pd
 import numpy as np
@@ -286,26 +285,31 @@ def hydrosat_data(context: AssetExecutionContext):
     deps=[AssetDep(hydrosat_data, partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))],
     required_resource_keys={"azure_blob"}
 )
-def dependent_asset(context: AssetExecutionContext, hydrosat_data):
+def dependent_asset(context: AssetExecutionContext, hydrosat_data_prev):  # Renamed parameter to make it clear
+    """
+    Process dependent asset that uses the previous day's hydrosat_data.
+    The input will be automatically loaded by Dagster's I/O manager.
+    """
     current_date = context.partition_key
     prev_date = (datetime.datetime.strptime(current_date, "%Y-%m-%d") - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     context.log.info(f"Processing dependent asset for date: {current_date}, using data from: {prev_date}")
     
-    # Get the current data directly from the function parameter
-    current_data = hydrosat_data
-    
-    if current_data.empty:
-        context.log.info("No current data available for processing")
-        return pd.DataFrame()
-    
     # Get blob client for output container
     output_client = context.resources.azure_blob.get_container_client(OUTPUT_CONTAINER)
     
-    # Load previous day's data directly from the output container
-    prev_filename = f"hydrosat_data_{prev_date}.csv"
+    # Get the current data directly
     try:
-        blob_data = output_client.download_blob(prev_filename).readall()
-        prev_data = pd.read_csv(pd.io.common.BytesIO(blob_data))
+        # Load current day's data directly from the output container
+        current_filename = f"hydrosat_data_{current_date}.csv"
+        current_blob_data = output_client.download_blob(current_filename).readall()
+        current_data = pd.read_csv(pd.io.common.BytesIO(current_blob_data))
+        
+        # Previous day's data comes from the input parameter
+        prev_data = hydrosat_data_prev
+        
+        if current_data.empty or prev_data.empty:
+            context.log.info("Missing data for processing")
+            return pd.DataFrame()
         
         # Merge current and previous data
         merged_data = pd.merge(current_data, prev_data, on=["field_id", "field_name", "crop_type"], suffixes=("", "_prev"))
@@ -367,5 +371,5 @@ def dependent_asset(context: AssetExecutionContext, hydrosat_data):
             context.log.info("No matching fields between current and previous data")
             return pd.DataFrame()
     except Exception as e:
-        context.log.error(f"Error processing previous day's data: {str(e)}")
-        return current_data
+        context.log.error(f"Error processing data: {str(e)}")
+        return pd.DataFrame()

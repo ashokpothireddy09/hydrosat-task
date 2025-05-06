@@ -3,13 +3,13 @@ Reusable Dagster resources for the Hydrosat project.
 
 1. `azure_blob_resource`
    ↳ Gives every asset an authenticated `BlobServiceClient` based on
-     • AZURE_STORAGE_CONNECTION_STRING   – or –
+     • AZURE_STORAGE_CONNECTION_STRING   – or –
      • AZURE_STORAGE_ACCOUNT  +  AZURE_STORAGE_KEY
 
 2. `azure_pickle_io_manager`
    ↳ Persists / loads Dagster asset outputs as pickled objects in the
      **outputs** container, so downstream assets running in a *different*
-     Kubernetes pod can still read yesterday’s DataFrame.
+     Kubernetes pod can still read yesterday's DataFrame.
 
      Written path pattern:
      az://outputs/dagster/storage/<asset_key>/<partition_key>/<idx>.pkl
@@ -66,7 +66,7 @@ def azure_pickle_io_manager(init_context):
     account_name = init_context.resources.azure_blob.account_name
     key          = os.getenv("AZURE_STORAGE_KEY")   # needed by adlfs
 
-    if not key:   # fail early – otherwise you'd get a cryptic 403 later on
+    if not key:   # fail early – otherwise you'd get a cryptic 403 later on
         raise RuntimeError("AZURE_STORAGE_KEY must be set for the IO‑manager")
 
     fs = AzureBlobFileSystem(
