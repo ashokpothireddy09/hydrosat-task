@@ -285,7 +285,7 @@ def hydrosat_data(context: AssetExecutionContext):
     deps=[AssetDep(hydrosat_data, partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))],
     required_resource_keys={"azure_blob"}
 )
-def dependent_asset(context: AssetExecutionContext, hydrosat_data_prev):  # Renamed parameter to make it clear
+def dependent_asset(context: AssetExecutionContext, hydrosat_data):  # <-- Changed the parameter name to match the asset
     """
     Process dependent asset that uses the previous day's hydrosat_data.
     The input will be automatically loaded by Dagster's I/O manager.
@@ -305,7 +305,7 @@ def dependent_asset(context: AssetExecutionContext, hydrosat_data_prev):  # Rena
         current_data = pd.read_csv(pd.io.common.BytesIO(current_blob_data))
         
         # Previous day's data comes from the input parameter
-        prev_data = hydrosat_data_prev
+        prev_data = hydrosat_data  # Using the parameter directly with its original name
         
         if current_data.empty or prev_data.empty:
             context.log.info("Missing data for processing")

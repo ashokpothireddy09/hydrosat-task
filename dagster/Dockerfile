@@ -11,15 +11,16 @@ ENV CPLUS_INCLUDE_PATH=/usr/include/gdal C_INCLUDE_PATH=/usr/include/gdal
 WORKDIR /app
 COPY pyproject.toml .
 
-# Install dependencies - added matplotlib here
+# Install dependencies - added matplotlib and adlfs here
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
         dagster \
-        dagster-postgres \        
+        dagster-postgres \
         dagster-k8s \
         dagster-azure \
         azure-identity \
-        geopandas shapely pyarrow matplotlib
+        geopandas shapely pyarrow matplotlib \
+        adlfs
 
 COPY hydrosat_project ./hydrosat_project
 COPY workspace.yaml .

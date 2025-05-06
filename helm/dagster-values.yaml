@@ -1,0 +1,54 @@
+###############################################################################
+# Helm values that install Dagster + your user‑code deployment on AKS.
+###############################################################################
+
+dagsterApiServer:
+  service:
+    type: LoadBalancer           # <- makes the gRPC API public (handy for local dev)
+
+dagsterWebserver:
+  service:
+    type: LoadBalancer           # <- exposes the UI
+
+postgresql:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi
+
+rabbitmq:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi
+
+###############################################################################
+# User‑code deployment (your Docker image that contains hydrosat_project)
+###############################################################################
+dagster-user-deployments:
+  enabled: true
+  deployments:
+    - name: hydrosat-code
+
+      # Image is swapped to your ACR by deploy.sh – these are just defaults
+      image:
+        repository: hydro0ba375acr.azurecr.io/hydrosat
+        tag: latest
+        pullPolicy: Always
+
+      # Tell Dagster to load definitions from the Python *module*
+      dagsterApiGrpcArgs:
+        - "-m"
+        - "hydrosat_project"
+      port: 4000
+      workingDirectory: "/app"
+
+      # Environment variables passed into the container
+      env:
+        # full connection‑string – required by BlobServiceClient
+        - name: AZURE_STORAGE_CONNECTION_STRING
+          value: "DefaultEndpointsProtocol=https;AccountName=hydro0ba375sa;AccountKey=F+SWu6Kw8FJpm+ysWGYFL7E/SFvphzs/3S2jLk1nX4/nyIsCNK7jyaL9ZFyYVgf/8R9q9V87ZR9J+AStF70vqw==;EndpointSuffix=core.windows.net"
+
+        # account key – required by the IO‑manager
+        - name: AZURE_STORAGE_KEY
+          value: "F+SWu6Kw8FJpm+ysWGYFL7E/SFvphzs/3S2jLk1nX4/nyIsCNK7jyaL9ZFyYVgf/8R9q9V87ZR9J+AStF70vqw=="
