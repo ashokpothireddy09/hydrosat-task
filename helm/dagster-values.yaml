@@ -1,13 +1,14 @@
-# helm/dagster-values.yaml
+###############################################################################
+# Helm values that install Dagster + your user‑code deployment on AKS.
+###############################################################################
 
-# Expose Dagster services
 dagsterApiServer:
   service:
-    type: LoadBalancer
+    type: LoadBalancer           # <- makes the gRPC API public (handy for local dev)
 
 dagsterWebserver:
   service:
-    type: LoadBalancer
+    type: LoadBalancer           # <- exposes the UI
 
 postgresql:
   enabled: true
@@ -21,23 +22,33 @@ rabbitmq:
     enabled: true
     size: 8Gi
 
-# Override user code deployments
+###############################################################################
+# User‑code deployment (your Docker image that contains hydrosat_project)
+###############################################################################
 dagster-user-deployments:
   enabled: true
   deployments:
     - name: hydrosat-code
+
+      # Image is swapped to your ACR by deploy.sh – these are just defaults
       image:
         repository: hydro0ba375acr.azurecr.io/hydrosat
         tag: latest
         pullPolicy: Always
+
+      # Tell Dagster to load definitions from the Python *module*
       dagsterApiGrpcArgs:
-        - "-m"  # Use module loading
+        - "-m"
         - "hydrosat_project"
       port: 4000
-      env:
-        - name: AZURE_STORAGE_CONNECTION_STRING
-          value: "DefaultEndpointsProtocol=https;AccountName=STORAGE_ACCOUNT_NAME;AccountKey=YOUR_ACCOUNT_KEY;EndpointSuffix=core.windows.net"
       workingDirectory: "/app"
 
-      
+      # Environment variables passed into the container
+      env:
+        # full connection‑string – required by BlobServiceClient
+        - name: AZURE_STORAGE_CONNECTION_STRING
+          value: "DefaultEndpointsProtocol=https;AccountName=STORAGE_ACCOUNT_NAME;AccountKey=PLACEHOLDER;EndpointSuffix=core.windows.net"
 
+        # account key – required by the IO‑manager
+        - name: AZURE_STORAGE_KEY
+          value: "PLACEHOLDER"
