@@ -11,6 +11,22 @@ cd terraform
 AKS_NAME=$(terraform output -raw aks_name)
 ACR_NAME=$(terraform output -raw acr_name)
 STORAGE=$(terraform output -raw storage_account_name)
+
+echo "⏳ Getting Azure Storage account key..."
+# Get resource group and storage account name from terraform
+RESOURCE_GROUP=$(terraform -chdir=terraform output -raw resource_group_name)
+STORAGE_ACCOUNT=$(terraform -chdir=terraform output -raw storage_account_name)
+
+# Get the primary storage account key
+STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query "[0].value" -o tsv)
+
+# Create the full connection string
+CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=$STORAGE_ACCOUNT;AccountKey=$STORAGE_KEY;EndpointSuffix=core.windows.net"
+
+# Update the Helm values file with the actual connection string
+# This uses sed to replace the placeholder with the actual connection string
+sed -i "s|AZURE_STORAGE_CONNECTION_STRING.*|AZURE_STORAGE_CONNECTION_STRING\n            value: \"$CONNECTION_STRING\"|" helm/dagster-values.yaml
+
 cd ..
 
 echo "⏳ 2/4 Get AKS creds ..."

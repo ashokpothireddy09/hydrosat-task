@@ -13,8 +13,13 @@ COPY pyproject.toml .
 
 # Install dependencies - added matplotlib here
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir dagster dagster-k8s dagster-azure azure-identity \
-    geopandas shapely pyarrow matplotlib
+    pip install --no-cache-dir \
+        dagster \
+        dagster-postgres \        
+        dagster-k8s \
+        dagster-azure \
+        azure-identity \
+        geopandas shapely pyarrow matplotlib
 
 COPY hydrosat_project ./hydrosat_project
 COPY workspace.yaml .
