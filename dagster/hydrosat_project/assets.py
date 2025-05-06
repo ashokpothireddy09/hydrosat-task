@@ -184,34 +184,75 @@ def generate_random_field_polygons(bbox, num_fields=5, min_size=0.05, max_size=0
 def hydrosat_data(context: AssetExecutionContext):
     date = context.partition_key
     context.log.info(f"Processing data for date: {date}")
-    bbox = box(10.0, 45.0, 11.0, 46.0)
+    
+    # Try to use a bounding box from the input container if available
+    bbox = box(12.0, 45.0, 12.5, 45.5)  # Default bounding box based on your bbox.json
     
     # Get blob clients for input and output containers
     input_client = context.resources.azure_blob.get_container_client(INPUT_CONTAINER)
     output_client = context.resources.azure_blob.get_container_client(OUTPUT_CONTAINER)
     
-    fields_filename = "field_definitions.json"
+    # Try to load a bounding box from input container
     try:
-        # Try to load field definitions from input container
-        blob_data = input_client.download_blob(fields_filename).readall()
-        fields_json = json.loads(blob_data)
-        fields = []
-        for field in fields_json:
-            field["polygon"] = Polygon(field["polygon_coords"])
-            del field["polygon_coords"]
-            fields.append(field)
-        context.log.info(f"Loaded {len(fields)} fields from storage")
+        bbox_blob = input_client.download_blob("bbox.json").readall()
+        bbox_coords = json.loads(bbox_blob)
+        if len(bbox_coords) == 4:
+            bbox = box(bbox_coords[0], bbox_coords[1], bbox_coords[2], bbox_coords[3])
+            context.log.info(f"Loaded bounding box from storage: {bbox_coords}")
     except Exception as e:
-        context.log.info(f"Generating new field definitions: {str(e)}")
-        fields = generate_random_field_polygons(bbox, num_fields=8)
-        fields_json = []
-        for field in fields:
-            field_copy = field.copy()
-            field_copy["polygon_coords"] = list(field["polygon"].exterior.coords)
-            del field_copy["polygon"]
-            fields_json.append(field_copy)
-        # Save field definitions to input container
-        input_client.upload_blob(name=fields_filename, data=json.dumps(fields_json), overwrite=True)
+        context.log.info(f"Using default bounding box: {str(e)}")
+    
+    # Try to load field polygons from a GeoJSON file if available
+    try:
+        geojson_blob = input_client.download_blob("fields.geojson").readall()
+        fields_data = json.loads(geojson_blob)
+        
+        fields = []
+        for feature in fields_data.get("features", []):
+            field_id = str(feature.get("properties", {}).get("field_id", len(fields) + 1))
+            coords = feature.get("geometry", {}).get("coordinates", [])[0]
+            
+            if coords:
+                # Assume default planting date if not specified
+                planting_date = "2024-01-15"
+                crop_type = "Unknown"
+                
+                # Create field with polygon from GeoJSON
+                fields.append({
+                    "id": f"field{field_id}",
+                    "name": f"Field {field_id}",
+                    "crop_type": crop_type,
+                    "planting_date": planting_date,
+                    "polygon": Polygon(coords)
+                })
+        
+        if fields:
+            context.log.info(f"Loaded {len(fields)} fields from GeoJSON")
+    except Exception as e:
+        context.log.info(f"Attempting to load field definitions from JSON: {str(e)}")
+        
+        # Try the original approach - load from field_definitions.json
+        fields_filename = "field_definitions.json"
+        try:
+            blob_data = input_client.download_blob(fields_filename).readall()
+            fields_json = json.loads(blob_data)
+            fields = []
+            for field in fields_json:
+                field["polygon"] = Polygon(field["polygon_coords"])
+                del field["polygon_coords"]
+                fields.append(field)
+            context.log.info(f"Loaded {len(fields)} fields from field definitions")
+        except Exception as e:
+            context.log.info(f"Generating new field definitions: {str(e)}")
+            fields = generate_random_field_polygons(bbox, num_fields=8)
+            fields_json = []
+            for field in fields:
+                field_copy = field.copy()
+                field_copy["polygon_coords"] = list(field["polygon"].exterior.coords)
+                del field_copy["polygon"]
+                fields_json.append(field_copy)
+            # Save field definitions to input container
+            input_client.upload_blob(name=fields_filename, data=json.dumps(fields_json), overwrite=True)
     
     gdf_fields = gpd.GeoDataFrame(fields, geometry='polygon')
     gdf_fields['intersects'] = gdf_fields.geometry.intersects(bbox)
@@ -285,10 +326,10 @@ def hydrosat_data(context: AssetExecutionContext):
     deps=[AssetDep(hydrosat_data, partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))],
     required_resource_keys={"azure_blob"}
 )
-def dependent_asset(context: AssetExecutionContext, hydrosat_data):  # <-- Changed the parameter name to match the asset
+def dependent_asset(context: AssetExecutionContext):
     """
     Process dependent asset that uses the previous day's hydrosat_data.
-    The input will be automatically loaded by Dagster's I/O manager.
+    Loads the data directly from blob storage instead of using the IO manager.
     """
     current_date = context.partition_key
     prev_date = (datetime.datetime.strptime(current_date, "%Y-%m-%d") - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -297,15 +338,16 @@ def dependent_asset(context: AssetExecutionContext, hydrosat_data):  # <-- Chang
     # Get blob client for output container
     output_client = context.resources.azure_blob.get_container_client(OUTPUT_CONTAINER)
     
-    # Get the current data directly
     try:
         # Load current day's data directly from the output container
         current_filename = f"hydrosat_data_{current_date}.csv"
         current_blob_data = output_client.download_blob(current_filename).readall()
         current_data = pd.read_csv(pd.io.common.BytesIO(current_blob_data))
         
-        # Previous day's data comes from the input parameter
-        prev_data = hydrosat_data  # Using the parameter directly with its original name
+        # Load previous day's data directly from the output container
+        prev_filename = f"hydrosat_data_{prev_date}.csv"
+        prev_blob_data = output_client.download_blob(prev_filename).readall()
+        prev_data = pd.read_csv(pd.io.common.BytesIO(prev_blob_data))
         
         if current_data.empty or prev_data.empty:
             context.log.info("Missing data for processing")
