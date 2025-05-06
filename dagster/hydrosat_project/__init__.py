@@ -1,24 +1,18 @@
 """
-Dagster entry‑point: wires up the assets defined in assets.py with
-the Azure‑Blob resource defined in resources.py.
+Dagster entry‑point – wires assets + resources together.
 """
 
 from dagster import Definitions
 
-# Assets that actually exist
 from .assets import hydrosat_data, dependent_asset
+from .resources import azure_blob_resource, azure_pickle_io_manager
 
-# Resource that gives the assets an authenticated blob‑client
-from .resources import azure_blob_resource
-
-# Register everything with Dagster
 defs = Definitions(
-    assets=[
-        hydrosat_data,
-        dependent_asset,
-    ],
+    assets=[hydrosat_data, dependent_asset],
     resources={
-        # key must match required_resource_keys in @asset decorators
+        # Used directly inside the asset code
         "azure_blob": azure_blob_resource,
+        # Default IO‑manager – handles persistence of ALL asset outputs
+        "io_manager": azure_pickle_io_manager,
     },
 )
