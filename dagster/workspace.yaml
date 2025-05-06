@@ -1,5 +1,4 @@
+# dagster/workspace.yaml
 load_from:
-  - grpc_server:
-      host: 127.0.0.1
-      port: 4000
-      location_name: hydrosat 
+  - python_module:
+      module_name: hydrosat_project
