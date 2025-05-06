@@ -10,7 +10,6 @@ PREFIX="${3:-hydro}"
 echo "⏳ 1/4 Terraform apply ..."
 cd terraform
 
-
 terraform init -upgrade
 terraform apply -auto-approve \
    -var="prefix=$PREFIX" \
