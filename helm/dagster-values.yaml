@@ -31,8 +31,8 @@ dagster-user-deployments:
         tag: latest
         pullPolicy: Always
       dagsterApiGrpcArgs:
-        - "-f"
-        - "/app/workspace.yaml"  # Use the workspace file instead of module
+        - "-w"  # Use -w for workspace file instead of -f
+        - "/app/workspace.yaml"
       port: 4000
       env:
         - name: AZURE_STORAGE_CONNECTION_STRING

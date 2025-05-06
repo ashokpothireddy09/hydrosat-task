@@ -68,8 +68,8 @@ helm repo update
 helm upgrade --install dagster dagster/dagster \
    --namespace dagster --create-namespace \
    -f helm/dagster-values.yaml \
-   --set userCodeDeployments[0].image.repository="$ACR_NAME.azurecr.io/hydrosat" \
-   --set userCodeDeployments[0].image.tag="latest"
+   --set dagster-user-deployments.deployments[0].image.repository="$ACR_NAME.azurecr.io/hydrosat" \
+   --set dagster-user-deployments.deployments[0].image.tag="latest"
 
 echo "✅ Done. Run  ➜  kubectl -n dagster get svc dagster-dagster-webserver"
 

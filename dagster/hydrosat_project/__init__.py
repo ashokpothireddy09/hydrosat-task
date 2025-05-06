@@ -1,4 +1,3 @@
-# hydrosat_project/__init__.py
 from dagster import Definitions
 from .assets import field_metrics
 from .resources import adls2_parquet_io_manager

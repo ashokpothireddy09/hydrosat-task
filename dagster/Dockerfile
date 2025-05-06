@@ -12,4 +12,5 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir dagst
 COPY hydrosat_project ./hydrosat_project
 COPY workspace.yaml .
 
-CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "hydrosat_project"]
+# Modified command - use -w instead of -f for workspace files
+CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-w", "/app/workspace.yaml"]
