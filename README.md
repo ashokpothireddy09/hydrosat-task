@@ -1,22 +1,37 @@
 # Hydrosat Azure Challenge 🚀
 
-_Build a secure, daily‑partitioned geospatial pipeline on Azure._
+# Hydrosat Geospatial Pipeline
 
-## Quick start
+A daily-partitioned geospatial data processing pipeline deployed on Azure Kubernetes Service using Dagster for orchestration.
 
-```bash
-./deploy.sh               # takes ~15 min
-# open dagster UI
-```
+## Overview
 
-## Folder guide
+This project implements a data pipeline that:
+- Processes geospatial data within defined bounding boxes
+- Handles multiple field polygons with different planting dates
+- Runs daily partitions with dependencies on previous days
+- Stores results in Azure Blob Storage
 
-| Path       | Purpose                                      |
-| ---------- | -------------------------------------------- |
-| terraform/ | All Azure resources coded in HCL             |
-| dagster/   | Dagster project, Dockerfile, code            |
-| helm/      | Helm overrides for Dagster chart             |
-| deploy.sh  | One‑shot wrapper – Terraform → Docker → Helm |
+## Project Structure
+hydrosat-task/
+├── README.md # Project overview (this file)
+├── INSTRUCTIONS.md # Setup and deployment instructions
+├── ARCHITECTURE.md # System architecture documentation
+├── deploy.sh # One-click deployment script
+├── terraform/ # Infrastructure as Code
+│ ├── main.tf # Azure resources definition
+│ ├── variables.tf # Configurable parameters
+│ └── outputs.tf # Resource outputs
+├── dagster/ # Dagster application
+│ ├── Dockerfile # Container definition
+│ ├── workspace.yaml # Dagster workspace config
+│ ├── pyproject.toml # Python dependencies
+│ └── hydrosat_project/ # Python code module
+│ ├── init.py # Module initialization
+│ ├── assets.py # Dagster assets definition
+│ └── resources.py # Azure resources configuration
+└── helm/ # Kubernetes deployment
+└── dagster-values.yaml # Helm chart configuration
 
 ## Inputs
 
@@ -29,13 +44,27 @@ az storage blob upload-batch -s inputs/ -d inputs --account-name <storage>
 * `bbox.json` – bounding rectangle `[xmin,ymin,xmax,ymax]`
 * `fields.geojson` – polygons you drew via [https://geojson.io](https://geojson.io)
 
-## Common commands
+## Quick Start
 
-| Action           | Command                             |
-| ---------------- | ----------------------------------- |
-| See cluster pods | `kubectl get pods -n dagster`       |
-| Tail a run       | Dagit ▸ Runs ▸ click run            |
-| Tidy all         | `cd terraform && terraform destroy` |
+1. Make sure prerequisites are installed (see INSTRUCTIONS.md)
+2. Run the deployment script:
+
+
+```bash
+./deploy.sh               # takes ~15 min
+# open dagster UI
+```
+3. Follow the instructions to access the Dagster UI
+4. Materialize assets to process geospatial data
+
+## Features
+
+- **Daily Partitioning**: Process data in daily increments
+- **Partition Dependencies**: Each day depends on the previous day's results
+- **Geospatial Processing**: Filter fields by bounding box and planting date
+- **Azure Integration**: Store inputs and outputs in Azure Blob Storage
+
+
 
 ## AI disclosure
 
